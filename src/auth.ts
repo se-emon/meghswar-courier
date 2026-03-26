@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import { getServerSession, NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
@@ -11,7 +11,7 @@ interface CustomUser {
   role: string
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -19,7 +19,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials): Promise<CustomUser | null> {
+      async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
           return null
         }
@@ -54,11 +54,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const customUser = user as CustomUser
-        token.id = customUser.id
-        token.name = customUser.name
-        token.role = customUser.role
-        token.username = customUser.username
+        const u = user as CustomUser
+        token.id = u.id
+        token.name = u.name || null
+        token.role = u.role
+        token.username = u.username
       }
       return token
     },
@@ -77,7 +77,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
-  trustHost: true,
-})
+  secret: process.env.NEXTAUTH_SECRET,
+}
+
+export const auth = async () => {
+  return getServerSession(authOptions)
+}

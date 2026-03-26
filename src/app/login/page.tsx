@@ -1,7 +1,35 @@
-import { login } from "@/app/login/actions"
+"use client"
+
+import { signIn } from "next-auth/react"
+import { useState } from "react"
 import { Package, Lock, User } from "lucide-react"
 
 export default function LoginPage() {
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+
+    const result = await signIn("credentials", {
+      username,
+      password,
+      redirect: false,
+    })
+
+    setLoading(false)
+
+    if (result?.error) {
+      setError("Invalid username or password")
+    } else {
+      window.location.href = "/"
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-navy via-primary-dark to-primary-orange">
       <div className="w-full max-w-md p-8">
@@ -14,7 +42,7 @@ export default function LoginPage() {
             <p className="text-gray-500 mt-1">HR & Accounting Management</p>
           </div>
 
-          <form action={login} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="username" className="label-field">
                 Username
@@ -23,8 +51,9 @@ export default function LoginPage() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="username"
-                  name="username"
                   type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="input-field pl-10"
                   placeholder="Enter username"
@@ -40,8 +69,9 @@ export default function LoginPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="password"
-                  name="password"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="input-field pl-10"
                   placeholder="Enter password"
@@ -49,11 +79,16 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {error && (
+              <div className="text-red-500 text-sm text-center">{error}</div>
+            )}
+
             <button
               type="submit"
-              className="w-full btn-primary py-3 text-lg font-semibold"
+              disabled={loading}
+              className="w-full btn-primary py-3 text-lg font-semibold disabled:opacity-50"
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
