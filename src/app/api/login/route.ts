@@ -53,10 +53,9 @@ export async function POST(request: Request) {
     response.cookies.set("auth-token", token, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
-      domain: ".vercel.app",
     })
 
     return response
