@@ -1,12 +1,16 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/auth"
 import { getActiveEmployees, getAdvances } from "./actions"
 import { AdvanceForm } from "./AdvanceForm"
 import { formatBDT } from "@/lib/utils"
 
 export default async function AdvancePage() {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const cookieStore = cookies()
+  const token = cookieStore.get("auth-token")?.value
+  
+  if (!token) {
+    redirect("/login")
+  }
 
   const employees = await getActiveEmployees()
   const advances = await getAdvances()

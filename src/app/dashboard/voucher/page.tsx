@@ -1,11 +1,15 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/auth"
 import { getAccounts, getLastVoucherNo } from "./actions"
 import { VoucherForm } from "./VoucherForm"
 
 export default async function VoucherPage() {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const cookieStore = cookies()
+  const token = cookieStore.get("auth-token")?.value
+  
+  if (!token) {
+    redirect("/login")
+  }
 
   const accounts = await getAccounts()
   const lastRV = await getLastVoucherNo("RV")

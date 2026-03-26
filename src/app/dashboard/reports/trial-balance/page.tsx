@@ -1,11 +1,14 @@
-import { redirect } from "next/navigation"
-import { auth } from "@/auth"
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { formatBDT } from "@/lib/utils"
 
 export default async function TrialBalancePage() {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const cookieStore = cookies()
+  const token = cookieStore.get("auth-token")?.value
+  
+  if (!token) {
+    redirect("/login")
+  }
 
   const accounts = await prisma.chartOfAccounts.findMany({
     where: { isActive: true, isHeader: false },
@@ -61,7 +64,7 @@ export default async function TrialBalancePage() {
           <h1 className="text-2xl font-bold text-primary-navy">Trial Balance</h1>
           <p className="text-gray-500">As of {new Date().toLocaleDateString()}</p>
         </div>
-        <a href="/reports" className="btn-secondary">Back to Reports</a>
+        <a href="/dashboard/reports" className="btn-secondary">Back to Reports</a>
       </div>
 
       {Object.entries(groupedAccounts).map(([group, data]) => (

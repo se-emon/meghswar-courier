@@ -1,12 +1,16 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { FileText, BarChart3, ArrowRight } from "lucide-react"
 
 export default async function ReportsPage() {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const cookieStore = cookies()
+  const token = cookieStore.get("auth-token")?.value
+  
+  if (!token) {
+    redirect("/login")
+  }
 
   const accounts = await prisma.chartOfAccounts.findMany({
     where: { isActive: true, isHeader: false },
@@ -30,7 +34,7 @@ export default async function ReportsPage() {
             </div>
           </div>
 
-          <form action="/reports/ledger" method="GET" className="space-y-3">
+          <form action="/dashboard/reports/ledger" method="GET" className="space-y-3">
             <div>
               <label className="label-field">Select Account</label>
               <select name="accountId" className="input-field" required>
@@ -60,7 +64,7 @@ export default async function ReportsPage() {
             </div>
           </div>
 
-          <Link href="/reports/trial-balance">
+          <Link href="/dashboard/reports/trial-balance">
             <button className="w-full btn-primary flex items-center justify-center gap-2">
               View Trial Balance <ArrowRight className="w-4 h-4" />
             </button>

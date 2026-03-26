@@ -1,11 +1,15 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { formatBDT, formatDateDisplay } from "@/lib/utils"
 
 export default async function LedgerReportPage({ searchParams }: { searchParams: { accountId?: string } }) {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const cookieStore = cookies()
+  const token = cookieStore.get("auth-token")?.value
+  
+  if (!token) {
+    redirect("/login")
+  }
 
   const accountId = searchParams.accountId
 
@@ -59,7 +63,7 @@ export default async function LedgerReportPage({ searchParams }: { searchParams:
           <h1 className="text-2xl font-bold text-primary-navy">Account Ledger</h1>
           <p className="text-gray-500">{account.accountCode} - {account.accountName}</p>
         </div>
-        <a href="/reports" className="btn-secondary">Back to Reports</a>
+        <a href="/dashboard/reports" className="btn-secondary">Back to Reports</a>
       </div>
 
       <div className="card">

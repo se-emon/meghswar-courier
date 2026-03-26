@@ -214,7 +214,7 @@ export default async function DashboardPage() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-primary-navy">Recent Transactions</h2>
-          <Link href="/voucher" className="text-sm text-primary-orange hover:underline">View All</Link>
+            <Link href="/dashboard/voucher" className="text-sm text-primary-orange hover:underline">View All</Link>
         </div>
         
         {data.recentTransactions.length === 0 ? (

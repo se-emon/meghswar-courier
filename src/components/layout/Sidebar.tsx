@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   FileText,
@@ -10,22 +9,25 @@ import {
   Wallet,
   Receipt,
   BarChart3,
-  Settings,
   Package,
-  LogOut,
 } from "lucide-react"
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Voucher Entry", href: "/voucher", icon: FileText },
-  { name: "Employees", href: "/employees", icon: Users },
-  { name: "Advance", href: "/advance", icon: Wallet },
-  { name: "Payroll", href: "/payroll", icon: Receipt },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Voucher Entry", href: "/dashboard/voucher", icon: FileText },
+  { name: "Employees", href: "/dashboard/employees", icon: Users },
+  { name: "Advance", href: "/dashboard/advance", icon: Wallet },
+  { name: "Payroll", href: "/dashboard/payroll", icon: Receipt },
+  { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+
+  const handleLogout = () => {
+    document.cookie = "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    window.location.href = "/login"
+  }
 
   return (
     <div className="w-64 bg-primary-navy min-h-screen flex flex-col">
@@ -43,17 +45,16 @@ export function Sidebar() {
 
       <nav className="flex-1 p-4 space-y-1">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-primary-orange text-white"
                   : "text-white/70 hover:bg-white/10 hover:text-white"
-              )}
+              }`}
             >
               <item.icon className="w-5 h-5" />
               {item.name}
@@ -63,22 +64,28 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-white/10">
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
         >
-          <Settings className="w-5 h-5" />
-          Settings
-        </Link>
-        <form action="/api/auth/signout" method="POST">
-          <button
-            type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-5 h-5"
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
-          </button>
-        </form>
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          </svg>
+          Sign Out
+        </button>
       </div>
     </div>
   )
