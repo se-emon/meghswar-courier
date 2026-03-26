@@ -12,21 +12,35 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    if (!username || !password) {
+      setError("Please enter username and password")
+      return
+    }
+    
     setLoading(true)
     setError("")
 
-    const result = await signIn("credentials", {
-      username,
-      password,
-      redirect: false,
-    })
+    try {
+      const result = await signIn("credentials", {
+        username,
+        password,
+        redirect: false,
+      })
 
-    setLoading(false)
+      console.log("SignIn result:", result)
 
-    if (result?.error) {
-      setError("Invalid username or password")
-    } else {
-      window.location.href = "/dashboard"
+      if (result?.error) {
+        setError("Invalid username or password")
+      } else if (result?.ok) {
+        window.location.href = "/dashboard"
+      }
+    } catch (err) {
+      console.error("SignIn error:", err)
+      setError("Login failed. Please try again.")
+    } finally {
+      setLoading(false)
     }
   }
 
