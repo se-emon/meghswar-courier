@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum VoucherType {
+  RV  // Receive Voucher
+  PV  // Payment Voucher
+  JV  // Journal Voucher
+  TV  // Transfer Voucher
+  DI  // Delivery Income
+}
+
+enum AccountGroup {
+  ASSETS
+  LIABILITIES
+  INCOME
+  EXPENSES
+  EQUITY
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  RESIGNED
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  email     String?
+  role      UserRole @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChartOfAccounts {
+  id              String           @id @default(cuid())
+  accountCode     String           @unique
+  accountName     String
+  accountGroup    AccountGroup
+  openingBalance  Decimal          @default(0) @db.Decimal(15, 2)
+  currentBalance  Decimal          @default(0) @db.Decimal(15, 2)
+  isHeader        Boolean          @default(false)
+  isCashBank      Boolean          @default(false)
+  isActive        Boolean          @default(true)
+  parentId        String?
+  parent          ChartOfAccounts? @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children        ChartOfAccounts[] @relation("AccountHierarchy")
+  vouchersDr      VoucherMain[]    @relation("VoucherDrAccount")
+  vouchersCr      VoucherMain[]    @relation("VoucherCrAccount")
+  ledgerEntries   Ledger[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([accountCode])
+  @@index([accountGroup])
+  @@index([parentId])
+}
+
+model VoucherMain {
+  id              String      @id @default(cuid())
+  voucherNo       String      @unique
+  voucherType     VoucherType
+  voucherDate     DateTime    @db.Date
+  amount          Decimal     @db.Decimal(15, 2)
+  drAccountId     String
+  crAccountId     String
+  drAccount       ChartOfAccounts @relation("VoucherDrAccount", fields: [drAccountId], references: [id])
+  crAccount       ChartOfAccounts @relation("VoucherCrAccount", fields: [crAccountId], references: [id])
+  narration       String?     @db.Text
+  transactionWith String?
+  isPosted        Boolean     @default(true)
+  createdBy       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  ledgerEntries   Ledger[]
+
+  @@index([voucherNo])
+  @@index([voucherType])
+  @@index([voucherDate])
+  @@index([drAccountId])
+  @@index([crAccountId])
+}
+
+model Ledger {
+  id              String        @id @default(cuid())
+  voucherMainId   String
+  voucherMain     VoucherMain   @relation(fields: [voucherMainId], references: [id])
+  accountId       String
+  account         ChartOfAccounts @relation(fields: [accountId], references: [id])
+  voucherNo       String
+  voucherType     VoucherType
+  voucherDate     DateTime      @db.Date
+  debit           Decimal       @default(0) @db.Decimal(15, 2)
+  credit          Decimal       @default(0) @db.Decimal(15, 2)
+  narration       String?       @db.Text
+  createdAt       DateTime      @default(now())
+
+  @@index([voucherMainId])
+  @@index([accountId])
+  @@index([voucherDate])
+  @@index([voucherNo])
+}
+
+model Employee {
+  id                    String            @id @default(cuid())
+  employeeCode          String            @unique
+  fullName              String
+  fatherName            String?
+  motherName            String?
+  dateOfBirth           DateTime?         @db.Date
+  gender                String?
+  maritalStatus         String?
+  religion              String?
+  nationality           String            @default("Bangladeshi")
+  nidNumber             String?
+  birthCertificateNo   String?
+  passportNo            String?
+  presentAddress        String?           @db.Text
+  permanentAddress      String?           @db.Text
+  phone                 String?
+  email                 String?
+  photo                 String?
+  
+  // Employment Details
+  isRider               Boolean           @default(false)
+  designation           String?
+  department            String?
+  joinDate              DateTime?         @db.Date
+  employmentStatus      EmploymentStatus  @default(ACTIVE)
+  
+  // Salary Structure
+  basicSalary           Decimal            @default(0) @db.Decimal(15, 2)
+  houseRentAllowance   Decimal            @default(0) @db.Decimal(15, 2)
+  medicalAllowance     Decimal            @default(0) @db.Decimal(15, 2)
+  transportAllowance   Decimal            @default(0) @db.Decimal(15, 2)
+  otherAllowance       Decimal            @default(0) @db.Decimal(15, 2)
+  grossSalary          Decimal            @default(0) @db.Decimal(15, 2)
+  
+  // Bank Details
+  bankName              String?
+  bankAccountNo        String?
+  bankBranch           String?
+  mobileBankingType    String?
+  mobileBankingNo      String?
+  
+  // Nominee Details
+  nomineeName           String?
+  nomineeRelation       String?
+  nomineePhone          String?
+  nomineeNid            String?
+  
+  isActive              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  advances              Advance[]
+  payrollMain           PayrollMain[]
+
+  @@index([employeeCode])
+  @@index([isRider])
+  @@index([employmentStatus])
+}
+
+model Advance {
+  id              String        @id @default(cuid())
+  employeeId      String
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+  voucherNo       String?
+  amount          Decimal       @db.Decimal(15, 2)
+  purpose         String?
+  totalInstallments Int         @default(1)
+  paidInstallments Int          @default(0)
+  monthlyDeduction Decimal     @db.Decimal(15, 2)
+  remainingAmount Decimal      @db.Decimal(15, 2)
+  status          PaymentStatus @default(PENDING)
+  startMonth      DateTime      @db.Date
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model PayrollMain {
+  id              String        @id @default(cuid())
+  employeeId      String
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+  payrollMonth    DateTime      @db.Date
+  basicSalary     Decimal       @db.Decimal(15, 2)
+  houseRent       Decimal       @db.Decimal(15, 2)
+  medical         Decimal       @db.Decimal(15, 2)
+  transport       Decimal       @db.Decimal(15, 2)
+  otherAllowance  Decimal       @db.Decimal(15, 2)
+  grossSalary     Decimal       @db.Decimal(15, 2)
+  advanceDeduction Decimal     @default(0) @db.Decimal(15, 2)
+  netSalary       Decimal       @db.Decimal(15, 2)
+  voucherNo       String?
+  isPaid          Boolean       @default(false)
+  paidDate        DateTime?     @db.Date
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([employeeId])
+  @@index([payrollMonth])
+  @@index([isPaid])
+}
