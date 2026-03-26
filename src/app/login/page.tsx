@@ -1,6 +1,5 @@
 "use client"
 
-import { signIn } from "next-auth/react"
 import { useState } from "react"
 import { Package, Lock, User } from "lucide-react"
 
@@ -12,35 +11,24 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    e.stopPropagation()
-    
-    if (!username || !password) {
-      setError("Please enter username and password")
-      return
-    }
-    
     setLoading(true)
     setError("")
 
-    try {
-      const result = await signIn("credentials", {
-        username,
-        password,
-        redirect: false,
-      })
+    const res = await fetch("/api/auth/callback/credentials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
 
-      console.log("SignIn result:", result)
+    const data = await res.json()
+    console.log("API Response:", data)
 
-      if (result?.error) {
-        setError("Invalid username or password")
-      } else if (result?.ok) {
-        window.location.href = "/dashboard"
-      }
-    } catch (err) {
-      console.error("SignIn error:", err)
-      setError("Login failed. Please try again.")
-    } finally {
-      setLoading(false)
+    setLoading(false)
+
+    if (data.error || !data.ok) {
+      setError(data.error || "Invalid username or password")
+    } else {
+      window.location.href = "/dashboard"
     }
   }
 
