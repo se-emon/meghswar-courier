@@ -1,4 +1,4 @@
-import { auth } from "@/auth"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { formatBDT, formatDateDisplay } from "@/lib/utils"
@@ -85,8 +85,20 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  if (!session) redirect("/login")
+  const cookieStore = cookies()
+  const token = cookieStore.get("auth-token")?.value
+  
+  if (!token) {
+    redirect("/login")
+  }
+  
+  let session: any = null
+  try {
+    const jwt = require("jsonwebtoken")
+    session = jwt.verify(token, process.env.NEXTAUTH_SECRET!)
+  } catch {
+    redirect("/login")
+  }
 
   const data = await getDashboardData()
   const profit = data.monthlyIncome - data.monthlyExpense
@@ -96,7 +108,7 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-primary-navy">Dashboard</h1>
-          <p className="text-gray-500">Welcome back, {session.user.name}</p>
+          <p className="text-gray-500">Welcome back, {session?.name || session?.username}</p>
         </div>
         <div className="text-sm text-gray-500">
           {formatDateDisplay(new Date())}
